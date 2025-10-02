@@ -1,122 +1,139 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import SignUpStep from '@/components/SignUpStep';
+import UploadPhotoStep from '@/components/UploadPhotoStep';
+import ChooseAnimalStep from '@/components/ChooseAnimalStep';
+import GeneratePhotoStep from '@/components/GeneratePhotoStep';
+import PurchaseStep from '@/components/PurchaseStep';
+
+type Step = 'signup' | 'upload' | 'choose' | 'generate' | 'purchase';
+
+export interface UserData {
+  fullName: string;
+  email: string;
+  userId?: string;
+}
+
+export interface PhotoData {
+  photoUrl: string;
+  photoFile?: File;
+}
+
+export interface AnimalData {
+  animal: string;
+}
 
 export default function Home() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [country, setCountry] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<Step>('signup');
+  const [userData, setUserData] = useState<UserData>({ fullName: '', email: '' });
+  const [photoData, setPhotoData] = useState<PhotoData>({ photoUrl: '' });
+  const [animalData, setAnimalData] = useState<AnimalData>({ animal: '' });
+  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  const handleSignUpComplete = (data: UserData) => {
+    setUserData(data);
+    setCurrentStep('upload');
+  };
 
-    try {
-      const { error: supabaseError } = await supabase
-        .from('waiting_list')
-        .insert([{ email, name, country }]);
+  const handlePhotoUploadComplete = (data: PhotoData) => {
+    setPhotoData(data);
+    setCurrentStep('choose');
+  };
 
-      if (supabaseError) throw supabaseError;
+  const handleAnimalChoiceComplete = (data: AnimalData) => {
+    setAnimalData(data);
+    setCurrentStep('generate');
+  };
 
-      setSubmitted(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-      setSubmitted(false);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGenerationComplete = (imageUrl: string) => {
+    setGeneratedImageUrl(imageUrl);
+    setCurrentStep('purchase');
+  };
+
+  const handleBackToStart = () => {
+    setCurrentStep('signup');
+    setUserData({ fullName: '', email: '' });
+    setPhotoData({ photoUrl: '' });
+    setAnimalData({ animal: '' });
+    setGeneratedImageUrl('');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 md:p-12 shadow-2xl max-w-lg w-full border border-white/20">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Rejoignez la liste d&apos;attente
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+            Animal Portrait Studio
           </h1>
-          <p className="text-gray-300 text-lg">
-            Soyez les premiers à découvrir notre nouveau produit. Inscrivez-vous maintenant !
+          <p className="text-center text-gray-600 text-sm mt-2">
+            Create photos with your favorite animals
           </p>
         </div>
+      </header>
 
-        {!submitted ? (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-2">
-                Nom complet
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Jean Dupont"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
-                Adresse email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="vous@exemple.com"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-200 mb-2">
-                Pays
-              </label>
-              <input
-                type="text"
-                id="country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="France"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
-                required
-              />
-            </div>
-            {error && (
-              <div className="text-red-500 text-sm mt-2">
-                {error}
+      {/* Progress Bar */}
+      <div className="container mx-auto px-4 py-8 bg-gray-50">
+        <div className="flex justify-between items-center max-w-4xl mx-auto">
+          {['signup', 'upload', 'choose', 'generate', 'purchase'].map((step, index) => {
+            const stepNames = ['Sign Up', 'Upload', 'Choose', 'Generate', 'Purchase'];
+            const isActive = currentStep === step;
+            const isCompleted = ['signup', 'upload', 'choose', 'generate', 'purchase'].indexOf(currentStep) > index;
+            
+            return (
+              <div key={step} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                    isActive ? 'bg-blue-600 text-white shadow-lg' :
+                    isCompleted ? 'bg-blue-100 text-blue-600' :
+                    'bg-gray-200 text-gray-400'
+                  }`}>
+                    {isCompleted ? '✓' : index + 1}
+                  </div>
+                  <div className={`text-xs mt-2 hidden md:block font-medium ${isActive ? 'text-blue-600' : isCompleted ? 'text-blue-600' : 'text-gray-400'}`}>
+                    {stepNames[index]}
+                  </div>
+                </div>
+                {index < 4 && (
+                  <div className={`h-0.5 flex-1 mx-2 transition-all ${
+                    isCompleted ? 'bg-blue-600' : 'bg-gray-200'
+                  }`} />
+                )}
               </div>
-            )}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Inscription en cours...' : 'Rejoindre la liste d\'attente'}
-            </button>
-          </form>
-        ) : (
-          <div className="text-center py-8">
-            <div className="text-white text-5xl mb-4">✨</div>
-            <h2 className="text-2xl font-semibold text-white mb-2">
-              Merci de votre inscription !
-            </h2>
-            <p className="text-gray-300">
-              Nous vous tiendrons informé des prochaines actualités.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-8 text-center text-sm text-gray-400">
-          En vous inscrivant, vous acceptez de recevoir nos communications par email.
+            );
+          })}
         </div>
       </div>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-12 bg-gray-50 min-h-screen">
+        {currentStep === 'signup' && (
+          <SignUpStep onComplete={handleSignUpComplete} />
+        )}
+        {currentStep === 'upload' && (
+          <UploadPhotoStep userData={userData} onComplete={handlePhotoUploadComplete} onBack={() => setCurrentStep('signup')} />
+        )}
+        {currentStep === 'choose' && (
+          <ChooseAnimalStep onComplete={handleAnimalChoiceComplete} onBack={() => setCurrentStep('upload')} />
+        )}
+        {currentStep === 'generate' && (
+          <GeneratePhotoStep 
+            userData={userData} 
+            photoData={photoData} 
+            animalData={animalData}
+            onComplete={handleGenerationComplete}
+            onBack={() => setCurrentStep('choose')}
+          />
+        )}
+        {currentStep === 'purchase' && (
+          <PurchaseStep 
+            generatedImageUrl={generatedImageUrl}
+            userData={userData}
+            onBackToStart={handleBackToStart}
+          />
+        )}
+      </main>
     </div>
   );
 }
