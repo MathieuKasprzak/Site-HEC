@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [country, setCountry] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +19,7 @@ export default function Home() {
     try {
       const { error: supabaseError } = await supabase
         .from('waiting_list')
-        .insert([{ email }]);
+        .insert([{ email, name, country }]);
 
       if (supabaseError) throw supabaseError;
 
@@ -45,6 +47,20 @@ export default function Home() {
         {!submitted ? (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-2">
+                Nom complet
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Jean Dupont"
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
+                required
+              />
+            </div>
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">
                 Adresse email
               </label>
@@ -54,6 +70,20 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vous@exemple.com"
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-200 mb-2">
+                Pays
+              </label>
+              <input
+                type="text"
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="France"
                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all text-white placeholder-gray-400"
                 required
               />
