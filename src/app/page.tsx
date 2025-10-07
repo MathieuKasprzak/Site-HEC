@@ -1,139 +1,121 @@
 'use client';
 
 import { useState } from 'react';
-import SignUpStep from '@/components/SignUpStep';
-import UploadPhotoStep from '@/components/UploadPhotoStep';
-import ChooseAnimalStep from '@/components/ChooseAnimalStep';
-import GeneratePhotoStep from '@/components/GeneratePhotoStep';
-import PurchaseStep from '@/components/PurchaseStep';
-
-type Step = 'signup' | 'upload' | 'choose' | 'generate' | 'purchase';
-
-export interface UserData {
-  fullName: string;
-  email: string;
-  userId?: string;
-}
-
-export interface PhotoData {
-  photoUrl: string;
-  photoFile?: File;
-}
-
-export interface AnimalData {
-  animal: string;
-}
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<Step>('signup');
-  const [userData, setUserData] = useState<UserData>({ fullName: '', email: '' });
-  const [photoData, setPhotoData] = useState<PhotoData>({ photoUrl: '' });
-  const [animalData, setAnimalData] = useState<AnimalData>({ animal: '' });
-  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUpComplete = (data: UserData) => {
-    setUserData(data);
-    setCurrentStep('upload');
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
-  const handlePhotoUploadComplete = (data: PhotoData) => {
-    setPhotoData(data);
-    setCurrentStep('choose');
-  };
+    try {
+      const { error: supabaseError } = await supabase
+        .from('users')
+        .insert([{ full_name: fullName, email }]);
 
-  const handleAnimalChoiceComplete = (data: AnimalData) => {
-    setAnimalData(data);
-    setCurrentStep('generate');
-  };
+      if (supabaseError) throw supabaseError;
 
-  const handleGenerationComplete = (imageUrl: string) => {
-    setGeneratedImageUrl(imageUrl);
-    setCurrentStep('purchase');
-  };
-
-  const handleBackToStart = () => {
-    setCurrentStep('signup');
-    setUserData({ fullName: '', email: '' });
-    setPhotoData({ photoUrl: '' });
-    setAnimalData({ animal: '' });
-    setGeneratedImageUrl('');
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
-            Animal Portrait Studio
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="bg-white rounded-none p-8 md:p-12 max-w-lg w-full border border-gray-900">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold text-black mb-4 tracking-tight">
+            Join Us
           </h1>
-          <p className="text-center text-gray-600 text-sm mt-2">
-            Create photos with your favorite animals
+          <p className="text-gray-600 text-base">
+            Be the first to know when we launch
           </p>
         </div>
-      </header>
 
-      {/* Progress Bar */}
-      <div className="container mx-auto px-4 py-8 bg-gray-50">
-        <div className="flex justify-between items-center max-w-4xl mx-auto">
-          {['signup', 'upload', 'choose', 'generate', 'purchase'].map((step, index) => {
-            const stepNames = ['Sign Up', 'Upload', 'Choose', 'Generate', 'Purchase'];
-            const isActive = currentStep === step;
-            const isCompleted = ['signup', 'upload', 'choose', 'generate', 'purchase'].indexOf(currentStep) > index;
-            
-            return (
-              <div key={step} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                    isActive ? 'bg-blue-600 text-white shadow-lg' :
-                    isCompleted ? 'bg-blue-100 text-blue-600' :
-                    'bg-gray-200 text-gray-400'
-                  }`}>
-                    {isCompleted ? '✓' : index + 1}
-                  </div>
-                  <div className={`text-xs mt-2 hidden md:block font-medium ${isActive ? 'text-blue-600' : isCompleted ? 'text-blue-600' : 'text-gray-400'}`}>
-                    {stepNames[index]}
-                  </div>
-                </div>
-                {index < 4 && (
-                  <div className={`h-0.5 flex-1 mx-2 transition-all ${
-                    isCompleted ? 'bg-blue-600' : 'bg-gray-200'
-                  }`} />
-                )}
+        {!submitted ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="fullName" className="block text-xs font-medium text-gray-900 mb-2 uppercase tracking-wider">
+                Name
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="John Doe"
+                className="w-full px-4 py-3 rounded-none bg-white border-2 border-black focus:border-gray-700 outline-none transition-all text-black placeholder-gray-400"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium text-gray-900 mb-2 uppercase tracking-wider">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-none bg-white border-2 border-black focus:border-gray-700 outline-none transition-all text-black placeholder-gray-400"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="bg-black text-white px-4 py-3 rounded-none text-sm">
+                {error}
               </div>
-            );
-          })}
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-black text-white font-medium py-4 rounded-none hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
+            >
+              {isLoading ? 'Joining...' : 'Join Waiting List'}
+            </button>
+          </form>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-6 border-2 border-black"></div>
+            <h2 className="text-3xl font-bold text-black mb-4 tracking-tight">
+              Welcome
+            </h2>
+            <p className="text-gray-600 text-base mb-8">
+              Thank you, <strong className="text-black">{fullName}</strong>
+              <br />
+              We&apos;ll notify you at <strong className="text-black">{email}</strong>
+            </p>
+            <button
+              onClick={() => {
+                setSubmitted(false);
+                setFullName('');
+                setEmail('');
+              }}
+              className="text-black hover:text-gray-700 font-medium text-sm uppercase tracking-wider border-b-2 border-black hover:border-gray-700 transition-all"
+            >
+              Add Another
+            </button>
+          </div>
+        )}
+
+        <div className="mt-8 text-center text-xs text-gray-500 uppercase tracking-wider">
+          Updates Only · No Spam
         </div>
       </div>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12 bg-gray-50 min-h-screen">
-        {currentStep === 'signup' && (
-          <SignUpStep onComplete={handleSignUpComplete} />
-        )}
-        {currentStep === 'upload' && (
-          <UploadPhotoStep userData={userData} onComplete={handlePhotoUploadComplete} onBack={() => setCurrentStep('signup')} />
-        )}
-        {currentStep === 'choose' && (
-          <ChooseAnimalStep onComplete={handleAnimalChoiceComplete} onBack={() => setCurrentStep('upload')} />
-        )}
-        {currentStep === 'generate' && (
-          <GeneratePhotoStep 
-            userData={userData} 
-            photoData={photoData} 
-            animalData={animalData}
-            onComplete={handleGenerationComplete}
-            onBack={() => setCurrentStep('choose')}
-          />
-        )}
-        {currentStep === 'purchase' && (
-          <PurchaseStep 
-            generatedImageUrl={generatedImageUrl}
-            userData={userData}
-            onBackToStart={handleBackToStart}
-          />
-        )}
-      </main>
     </div>
   );
 }
